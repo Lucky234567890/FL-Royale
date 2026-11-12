@@ -1,0 +1,36 @@
+
+name: Verification FL Royale
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    runs-on: windows-latest
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Verifier les outils
+        shell: pwsh
+        run: |
+          Write-Host "Windows OK"
+          python --version
+          java -version
+          git --version
+          $PSVersionTable.PSVersion
+
+      - name: Verifier les fichiers FL Royale
+        shell: pwsh
+        run: |
+          $files = @(
+            "build.example.json",
+            "requirements-build.txt",
+            "tools/build_offline_app.ps1"
+          )
+          foreach ($file in $files) {
+            Write-Host "$file : $(Test-Path $file)"
+          }
