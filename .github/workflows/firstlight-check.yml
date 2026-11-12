@@ -1,0 +1,32 @@
+name: Verification Firstlight CR
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    runs-on: windows-latest
+    steps:
+      - name: Recuperer Firstlight CR
+        uses: actions/checkout@v4
+        with:
+          repository: Jaasssoooonnnnn/FirstLight_CR
+          ref: 3ade158c52bf33de3ffcea600ce380946b7de0d8
+          path: FirstLight_CR
+
+      - name: Verifier les checkpoints
+        shell: pwsh
+        run: |
+          $root = "FirstLight_CR/checkpoints"
+          $folders = @("General", "IL", "active IL", "2_6hog_expert")
+          foreach ($folder in $folders) {
+            $path = Join-Path $root $folder
+            Write-Host "DOSSIER $folder : $(Test-Path $path)"
+            if (Test-Path $path) {
+              Get-ChildItem $path -Recurse -File |
+                Select-Object -ExpandProperty FullName
+            }
+          }
