@@ -1,0 +1,44 @@
+name: Verification APK Nulls Royale
+
+on:
+  workflow_dispatch:
+    inputs:
+      apk_url:
+        description: "URL HTTPS directe de l APK"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Telecharger et verifier APK
+        env:
+          APK_URL: ${{ inputs.apk_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlparse
+          u = urlparse(os.environ["APK_URL"])
+          if u.scheme != "https" or not u.hostname:
+              raise SystemExit("URL HTTPS requise")
+          PY
+          curl --fail --location --proto '=https' --proto-redir '=https' --max-time 180 --max-filesize 524288000 --output base.apk "$APK_URL"
+          sha256sum base.apk
+          python3 - <<'PY'
+          import zipfile
+          p = "base.apk"
+          if not zipfile.is_zipfile(p):
+              raise SystemExit("Le fichier n'est pas un APK ZIP valide")
+          with zipfile.ZipFile(p) as z:
+              names = z.namelist()
+              print("AndroidManifest.xml present:", "AndroidManifest.xml" in names)
+              arch = sorted({x.split("/")[1] for x in names if x.startswith("lib/") and x.count("/") >= 2})
+              print("Architectures:", arch)
+              print("ARM64 present:", "arm64-v8a" in arch)
+          PY
